@@ -1,0 +1,6 @@
+
+<RCC>
+  <qresource prefix="organinserterstep">
+    <file>images/registration.png</file>
+  </qresource>
+</RCC>
