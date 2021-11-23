@@ -18,6 +18,7 @@ from opencmiss.zinc.field import Field
 from opencmiss.zinc.node import Node
 from opencmiss.zinc.result import RESULT_OK
 from scaffoldfitter.fitter import Fitter
+from scaffoldfitter.fitterstepalign import FitterStepAlign
 from scaffoldfitter.fitterstepfit import FitterStepFit
 
 
@@ -35,15 +36,22 @@ class OrganTransformer:
     def __init__(self, inputZincModelFile, inputZincDataFile, output_directory):
         self._fitter = Fitter(inputZincModelFile, inputZincDataFile)
         self._fitter.load()
+
+        filename = os.path.basename(inputZincModelFile).split('.')[0] + '_transformed'
+        path = output_directory
+        self._output_filename = os.path.join(path, filename)
+
+        self._currentFitterStep = FitterStepAlign()
+        self._fitter.addFitterStep(self._currentFitterStep)  # Future: , lastFitterStep
+        self._currentFitterStep.setAlignMarkers(True)
+        self._currentFitterStep.run(modelFileNameStem=self._output_filename)
+
         self._currentFitterStep = FitterStepFit()
         self._fitter.addFitterStep(self._currentFitterStep)  # Future: , lastFitterStep
         self._currentFitterStep.setGroupStrainPenalty(None, [0.001])
         self._currentFitterStep.setGroupCurvaturePenalty(None, [200.0])
         self._currentFitterStep.setGroupDataWeight(None, 1000.0)
 
-        filename = os.path.basename(inputZincModelFile).split('.')[0] + '_transformed'
-        path = output_directory
-        self._output_filename = os.path.join(path, filename)
         print("Transforming organ ... It may take a minute")
         self._currentFitterStep.run(modelFileNameStem=self._output_filename)
         self._output_filename = self._output_filename + '_fit1.exf'
