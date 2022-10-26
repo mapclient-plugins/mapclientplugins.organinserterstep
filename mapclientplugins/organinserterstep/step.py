@@ -2,6 +2,7 @@
 """
 MAP Client Plugin Step
 """
+import csv
 import json
 import os
 
@@ -17,19 +18,81 @@ from opencmiss.zinc.context import Context
 from opencmiss.zinc.field import Field
 from opencmiss.zinc.node import Node
 from opencmiss.zinc.result import RESULT_OK
+
 from scaffoldfitter.fitter import Fitter
 from scaffoldfitter.fitterstepalign import FitterStepAlign
 from scaffoldfitter.fitterstepfit import FitterStepFit
 
 
 class OrganInserter(object):
-    def __init__(self, input_model_file, input_data_file, output_directory):
+    def __init__(self, input_model_file, input_data_files, output_directory):
+        self._input_data_files = input_data_files
         marker_coordinates = MarkerCoordinates(input_model_file, output_directory)
-        organ_transformer = OrganTransformer(input_data_file, marker_coordinates.output_filename(), output_directory)
-        self._output_filename = organ_transformer.output_filename()
+        # organ_transformer = OrganTransformer(input_data_files, marker_coordinates.output_filename(), output_directory)
+        # self._output_filename = organ_transformer.output_filename()
+
+        self.write_annotations(output_directory)
+
+        self._output_filenames = []
+        for file in input_data_files:
+            if 'colon' in file.lower():
+                self._output_filenames.append(file)
+                self.add_organ_group(file)
+            else:
+                organ_transformer = OrganTransformer(file, marker_coordinates.output_filename(), output_directory)
+                self._output_filenames.append(organ_transformer.output_filename())
+                self.add_organ_group(organ_transformer.output_filename())
 
     def get_output_file_name(self):
-        return self._output_filename
+        return self._output_filenames
+
+    def get_organ_name(self, filename):
+        organsList = ['lung', 'heart', 'brainstem', 'stomach', 'bladder']
+        filename_base = os.path.basename(filename).split('.')[0]
+        for organ_name in organsList:
+            if organ_name in filename_base.lower():
+                return organ_name
+        else:
+            return filename_base
+
+    def write_annotations(self, output_directory):
+        DOI = ["https://doi.org/10.26275/yibc-wyu2", "https://doi.org/10.26275/dqpf-gqdt",
+               "https://doi.org/10.26275/rets-qdch", "https://doi.org/10.26275/dqpf-gqdt",
+               "https://doi.org/10.26275/yum2-z4uf", "https://doi.org/10.26275/xq3h-ba2b", "colon"]
+        organ_names = ['whole-body']
+        for filename in self._input_data_files:
+            organ_names.append(self.get_organ_name(filename))
+
+        annotation_file = os.path.join(output_directory, 'organinserter_annotations.csv')
+        with open(annotation_file, 'w', newline='') as fout:
+            writer = csv.writer(fout)
+            writer.writerow(['Organ name', 'Source', 'File name', 'Transformed file name'])
+            writer.writerow([organ_names[0], DOI[0], 'whole_body.exf', 'whole_body.exf'])
+            for c, filename in enumerate(self._input_data_files):
+                filenamebase = os.path.basename(filename)
+                writer.writerow([organ_names[c+1], DOI[c+1], filenamebase, filenamebase.split('.')[0]+'_transfromed_fit1.exf'])
+
+    def add_organ_group(self, filename):
+        context = Context('organGroup')
+        region = context.createRegion()
+        region.readFile(filename)
+        field_module = region.getFieldmodule()
+        mesh = field_module.findMeshByDimension(3)
+        with ChangeManager(field_module):
+            field_group = field_module.createFieldGroup()
+            organ_name = self.get_organ_name(filename)
+            field_group.setName(organ_name)
+            field_group.setSubelementHandlingMode(field_group.SUBELEMENT_HANDLING_MODE_FULL)
+            element_group = field_group.createFieldElementGroup(mesh)
+            mesh_group = element_group.getMeshGroup()
+            is_organ = field_module.createFieldConstant(1)
+            mesh_group.addElementsConditional(is_organ)
+            sir = region.createStreaminformationRegion()
+            srm = sir.createStreamresourceMemory()
+            sir.setResourceGroupName(srm, organ_name)
+            # sir.setResourceFieldNames(srm, fieldNames)
+            region.write(sir)
+            region.writeFile(filename)
 
 
 class BaseOutputFile(object):
@@ -47,8 +110,10 @@ class OrganTransformer(BaseOutputFile):
         super().__init__()
         self._fitter = Fitter(input_zinc_model_file, input_zinc_data_file)
         self._fitter.load()
+        self.set_model_coordinates_field()
 
-        filename = os.path.basename(input_zinc_model_file).split('.')[0] + '_transformed'
+        file_basename = os.path.basename(input_zinc_model_file).split('.')[0]
+        filename = file_basename + '_transformed'
         path = output_directory
         self._output_filename = os.path.join(path, filename)
 
@@ -63,12 +128,19 @@ class OrganTransformer(BaseOutputFile):
         self._currentFitterStep.setGroupCurvaturePenalty(None, [200.0])
         self._currentFitterStep.setGroupDataWeight(None, 1000.0)
 
-        print("Transforming organ ... It may take a minute")
+        print("Transforming organ ({}) ... It may take a minute".format(file_basename))
         QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self._currentFitterStep.run(modelFileNameStem=self._output_filename)
         self._output_filename = self._output_filename + '_fit1.exf'
         QtWidgets.QApplication.restoreOverrideCursor()
         print('Transformation is done')
+
+    def set_model_coordinates_field(self):
+        field_module = self._fitter.getFieldmodule()
+        modelCoordinatesFieldName = "coordinates"
+        field = field_module.findFieldByName(modelCoordinatesFieldName)
+        if field.isValid():
+            self._fitter.setModelCoordinatesFieldByName(modelCoordinatesFieldName)
 
 
 class MarkerCoordinates(BaseOutputFile):
@@ -97,18 +169,39 @@ class MarkerCoordinates(BaseOutputFile):
             if element.isValid():
                 field_cache = self._field_module.createFieldcache()
                 field_cache.setElement(element)
-                fielditer = self._field_module.createFielditerator()
-                field = fielditer.next()
+                field_iter = self._field_module.createFielditerator()
+                field = field_iter.next()
                 while field.isValid():
                     if field.isTypeCoordinate() and (field.getNumberOfComponents() == 3) \
                             and (field.castFiniteElement().isValid()):
                         if field.isDefinedAtLocation(field_cache):
                             break
-                    field = fielditer.next()
+                    field = field_iter.next()
                 else:
                     field = None
         if field:
             self._set_model_coordinates_field(field)
+
+    def get_marker_fields(self):
+        marker_name = False
+        marker_location_name = False
+        marker_group_name = False
+        field_iter = self._field_module.createFielditerator()
+        field = field_iter.next()
+        while field.isValid():
+            field_name = field.getName()
+            if 'marker' in field_name.lower():
+                if 'name' in field_name.lower():
+                    marker_name = field_name
+                elif 'location' in field_name.lower():
+                    marker_location_name = field_name
+                elif '.' not in field_name:
+                    marker_group_name = field_name
+            field = field_iter.next()
+        if all([marker_name, marker_location_name, marker_group_name]):
+            return marker_location_name, marker_name, marker_group_name
+        else:
+            raise AssertionError('Could not find marker fields')
 
     def _get_highest_dimension_mesh(self):
         for d in range(2, -1, -1):
@@ -133,9 +226,11 @@ class MarkerCoordinates(BaseOutputFile):
         field_cache = self._field_module.createFieldcache()
         nodes = self._field_module.findNodesetByFieldDomainType(Field.DOMAIN_TYPE_NODES)
 
-        markerLocation = self._field_module.findFieldByName("body_marker_location")
-        markerName = self._field_module.findFieldByName("body_marker_name")
-        markerGroup = self._field_module.findFieldByName("body_marker")
+        marker_location_name, marker_name, marker_group_name = self.get_marker_fields()
+
+        markerLocation = self._field_module.findFieldByName(marker_location_name)
+        markerName = self._field_module.findFieldByName(marker_name)
+        markerGroup = self._field_module.findFieldByName(marker_group_name)
 
         self._marker_region = self._region.createRegion()
         marker_fieldmodule = self._marker_region.getFieldmodule()
@@ -175,7 +270,8 @@ class MarkerCoordinates(BaseOutputFile):
                     result = marker_data_coordinates.setNodeParameters(marker_fieldCache, -1, Node.VALUE_LABEL_VALUE, 1, x)
                     if result == RESULT_OK:
                         name = markerName.evaluateString(field_cache)
-                        marker_data_name.assignString(marker_fieldCache, name)
+                        if name:
+                            marker_data_name.assignString(marker_fieldCache, name)
                     node = nodeIter.next()
 
     def _set_model_coordinates_field(self, model_coordinates_field: Field):
@@ -204,7 +300,7 @@ class OrganInserterStep(WorkflowStepMountPoint):
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
-                      'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#uses-list-of',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
@@ -254,7 +350,11 @@ class OrganInserterStep(WorkflowStepMountPoint):
 
         :param index: Index of the port to return.
         """
-        return self._port2_output_marker_data_file  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+        files = []
+        for file in self._port2_output_marker_data_file:
+            files.append(os.path.realpath(os.path.join(self._location, file)))
+        return files  # http://physiomeproject.org/workflow/1.0/rdf-schema#multiple_file_locations
+        # return self._port2_output_marker_data_file  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
 
     def configure(self):
         """
