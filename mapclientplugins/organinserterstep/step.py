@@ -198,7 +198,7 @@ class OrganInserterStep(WorkflowStepMountPoint):
         self._configured = False  # A step cannot be executed until it has been configured.
         self._category = 'Registration'
         # Add any other initialisation code here:
-        self._icon =  QtGui.QImage(':/organinserterstep/images/registration.png')
+        self._icon = QtGui.QImage(':/organinserterstep/images/registration.png')
         # Ports:
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
