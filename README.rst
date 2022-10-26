@@ -1,5 +1,5 @@
-organinserter
-=============
+Organ Inserter
+==============
 
-The organinserter step is a plugin for the MAP Client application.
+The Organ Inserter step is a plugin for the MAP Client application.
 
