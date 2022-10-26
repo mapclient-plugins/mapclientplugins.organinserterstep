@@ -22,7 +22,7 @@ from scaffoldfitter.fitterstepalign import FitterStepAlign
 from scaffoldfitter.fitterstepfit import FitterStepFit
 
 
-class OrganInseter(object):
+class OrganInserter(object):
     def __init__(self, input_model_file, input_data_file, output_directory):
         markerCoordinates = MarkerCoordinates(input_model_file, output_directory)
         organtransformer = OrganTransformer(input_data_file, markerCoordinates._output_filename, output_directory)
@@ -213,8 +213,8 @@ class organinserterStep(WorkflowStepMountPoint):
         """
         # Put your execute step code here before calling the '_doneExecution' method.
 
-        self._organ_inserter = OrganInseter(self._port0_inputZincModelFile, self._port1_inputZincDataFile,
-                                            self._location)
+        self._organ_inserter = OrganInserter(self._port0_inputZincModelFile, self._port1_inputZincDataFile,
+                                             self._location)
         self._port2_output_marker_data_file = self._organ_inserter.get_output_file_name()
 
         self._doneExecution()
