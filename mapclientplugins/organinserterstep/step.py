@@ -5,7 +5,7 @@ MAP Client Plugin Step
 import json
 import os
 
-from PySide2 import QtGui
+from PySide2 import QtCore, QtGui, QtWidgets
 
 from mapclient.mountpoints.workflowstep import WorkflowStepMountPoint
 from mapclientplugins.organinserterstep.configuredialog import ConfigureDialog
@@ -24,20 +24,31 @@ from scaffoldfitter.fitterstepfit import FitterStepFit
 
 class OrganInserter(object):
     def __init__(self, input_model_file, input_data_file, output_directory):
-        markerCoordinates = MarkerCoordinates(input_model_file, output_directory)
-        organtransformer = OrganTransformer(input_data_file, markerCoordinates._output_filename, output_directory)
-        self._output_filename = organtransformer._output_filename
+        marker_coordinates = MarkerCoordinates(input_model_file, output_directory)
+        organ_transformer = OrganTransformer(input_data_file, marker_coordinates.output_filename(), output_directory)
+        self._output_filename = organ_transformer.output_filename()
 
     def get_output_file_name(self):
         return self._output_filename
 
 
-class OrganTransformer:
-    def __init__(self, inputZincModelFile, inputZincDataFile, output_directory):
-        self._fitter = Fitter(inputZincModelFile, inputZincDataFile)
+class BaseOutputFile(object):
+
+    def __init__(self):
+        self._output_filename = None
+
+    def output_filename(self):
+        return self._output_filename
+
+
+class OrganTransformer(BaseOutputFile):
+
+    def __init__(self, input_zinc_model_file, input_zinc_data_file, output_directory):
+        super().__init__()
+        self._fitter = Fitter(input_zinc_model_file, input_zinc_data_file)
         self._fitter.load()
 
-        filename = os.path.basename(inputZincModelFile).split('.')[0] + '_transformed'
+        filename = os.path.basename(input_zinc_model_file).split('.')[0] + '_transformed'
         path = output_directory
         self._output_filename = os.path.join(path, filename)
 
@@ -53,20 +64,22 @@ class OrganTransformer:
         self._currentFitterStep.setGroupDataWeight(None, 1000.0)
 
         print("Transforming organ ... It may take a minute")
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self._currentFitterStep.run(modelFileNameStem=self._output_filename)
         self._output_filename = self._output_filename + '_fit1.exf'
+        QtWidgets.QApplication.restoreOverrideCursor()
         print('Transformation is done')
 
 
-class MarkerCoordinates:
+class MarkerCoordinates(BaseOutputFile):
     def __init__(self, input_scaffold_file, output_directory):
+        super().__init__()
         self._context = Context('markerBodyCoordinates')
         self._region = self._context.createRegion()
         self._region.setName('bodyRegion')
         self._field_module = self._region.getFieldmodule()
         self._scaffold_file = input_scaffold_file
         self._model_coordinates_field = None
-        self._output_filename = None
         self._marker_region = None
 
         self._load()
@@ -139,6 +152,7 @@ class MarkerCoordinates:
         markerTemplateInternal.defineField(marker_data_coordinates)
         markerTemplateInternal.setValueNumberOfVersions(marker_data_coordinates, -1, Node.VALUE_LABEL_VALUE, 1)
 
+        markerNodes = None
         if markerGroup.isValid():
             markerGroup = markerGroup.castGroup()
             markerNodeGroup = markerGroup.getFieldNodeGroup(nodes)
@@ -173,15 +187,15 @@ class MarkerCoordinates:
         return self._marker_region
 
 
-class organinserterStep(WorkflowStepMountPoint):
+class OrganInserterStep(WorkflowStepMountPoint):
     """
     Skeleton step which is intended to be a helpful starting point
     for new steps.
     """
 
     def __init__(self, location):
-        super(organinserterStep, self).__init__('organinserter', location)
-        self._configured = False # A step cannot be executed until it has been configured.
+        super(OrganInserterStep, self).__init__('Organ Inserter', location)
+        self._configured = False  # A step cannot be executed until it has been configured.
         self._category = 'Registration'
         # Add any other initialisation code here:
         self._icon =  QtGui.QImage(':/organinserterstep/images/registration.png')
@@ -200,8 +214,7 @@ class organinserterStep(WorkflowStepMountPoint):
         self._port1_inputZincDataFile = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
         self._port2_output_marker_data_file = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
         # Config:
-        self._config = {}
-        self._config['identifier'] = ''
+        self._config = {'identifier': ''}
 
         self._organ_inserter = None
 
@@ -295,5 +308,3 @@ class organinserterStep(WorkflowStepMountPoint):
         d.identifierOccursCount = self._identifierOccursCount
         d.setConfig(self._config)
         self._configured = d.validate()
-
-
