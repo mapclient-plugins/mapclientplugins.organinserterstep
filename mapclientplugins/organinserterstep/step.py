@@ -11,13 +11,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from mapclient.mountpoints.workflowstep import WorkflowStepMountPoint
 from mapclientplugins.organinserterstep.configuredialog import ConfigureDialog
 
-from opencmiss.utils.zinc.general import ChangeManager
-from opencmiss.utils.zinc.field import findOrCreateFieldGroup, findOrCreateFieldCoordinates,\
+from cmlibs.utils.zinc.general import ChangeManager
+from cmlibs.utils.zinc.field import findOrCreateFieldGroup, findOrCreateFieldCoordinates,\
     findOrCreateFieldStoredString
-from opencmiss.zinc.context import Context
-from opencmiss.zinc.field import Field
-from opencmiss.zinc.node import Node
-from opencmiss.zinc.result import RESULT_OK
+from cmlibs.zinc.context import Context
+from cmlibs.zinc.field import Field
+from cmlibs.zinc.node import Node
+from cmlibs.zinc.result import RESULT_OK
 
 from scaffoldfitter.fitter import Fitter
 from scaffoldfitter.fitterstepalign import FitterStepAlign
