@@ -36,7 +36,7 @@ class InstallCommand(install):
 setup(
     name='mapclientplugins.organinserterstep',
     version='0.1.0',
-    description='',
+    description='MAP Client plugin for embedding organ system in the scaffold using markers.',
     long_description='\n'.join(readme) + source_license,
     long_description_content_type='text/x-rst',
     classifiers=[
@@ -47,7 +47,7 @@ setup(
     cmdclass={'install': InstallCommand,},
     author='Elias Soltani',
     author_email='',
-    url='',
+    url='https://github.com/mapclient-plugins/mapclientplugins.organinserterstep.git',
     packages=find_packages(exclude=['ez_setup',]),
     namespace_packages=['mapclientplugins'],
     include_package_data=True,
