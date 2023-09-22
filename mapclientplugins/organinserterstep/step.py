@@ -83,8 +83,7 @@ class OrganInserter(object):
             organ_name = self.get_organ_name(filename)
             field_group.setName(organ_name)
             field_group.setSubelementHandlingMode(field_group.SUBELEMENT_HANDLING_MODE_FULL)
-            element_group = field_group.createFieldElementGroup(mesh)
-            mesh_group = element_group.getMeshGroup()
+            mesh_group = field_group.createMeshGroup(mesh)
             is_organ = field_module.createFieldConstant(1)
             mesh_group.addElementsConditional(is_organ)
             sir = region.createStreaminformationRegion()
@@ -240,7 +239,7 @@ class MarkerCoordinates(BaseOutputFile):
                                                                components_count=3)
         marker_data_name = findOrCreateFieldStoredString(marker_fieldmodule, name="marker_data_name")
         marker_data_group = findOrCreateFieldGroup(marker_fieldmodule, name="marker")
-        marker_data_nodesGroup = marker_data_group.createFieldNodeGroup(temp_nodes).getNodesetGroup()
+        marker_data_nodesGroup = marker_data_group.createNodesetGroup(temp_nodes)
 
         markerTemplateInternal = temp_nodes.createNodetemplate()
         markerTemplateInternal.defineField(marker_data_name)
@@ -250,9 +249,7 @@ class MarkerCoordinates(BaseOutputFile):
         markerNodes = None
         if markerGroup.isValid():
             markerGroup = markerGroup.castGroup()
-            markerNodeGroup = markerGroup.getFieldNodeGroup(nodes)
-            if markerNodeGroup.isValid():
-                markerNodes = markerNodeGroup.getNodesetGroup()
+            markerNodes = markerGroup.getNodesetGroup(nodes)
 
         if markerLocation.isValid() and markerName.isValid():
             with ChangeManager(marker_fieldmodule):
