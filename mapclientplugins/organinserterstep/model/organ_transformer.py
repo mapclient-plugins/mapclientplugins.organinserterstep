@@ -35,7 +35,7 @@ class OrganTransformer(BaseOutputFile):
         # self._currentFitterStep.setGroupCurvaturePenalty(None, [200.0])
         # self._currentFitterStep.setGroupDataWeight(None, 1000.0)
 
-        print("Transforming organ ({}) via marker alignment... It may take a minute".format(file_basename))
+        print("Transforming organ ({}) via default mode... It may take a minute".format(file_basename))
         QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         # self._currentFitterStep.run(modelFileNameStem=self._output_filename)
         # self._output_filename = self._output_filename + '_fit1.exf'

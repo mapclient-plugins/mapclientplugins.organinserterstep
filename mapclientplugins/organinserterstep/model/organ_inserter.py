@@ -11,27 +11,59 @@ body. It is possible to insert using 3 modes:
 """
 from cmlibs.utils.zinc.general import ChangeManager
 from cmlibs.zinc.context import Context
+from mapclientplugins.organinserterstep.model.common_trunk_inserter import CommonTrunkInserter
 from mapclientplugins.organinserterstep.model.marker_coordinates import MarkerCoordinates
 from mapclientplugins.organinserterstep.model.organ_transformer import OrganTransformer
 
 # import csv
+import logging
 import os
+import re
+
+
+logger = logging.getLogger(__name__)
 
 
 class OrganInserter(object):
-    def __init__(self, input_model_file, input_data_files, output_directory):
+    def __init__(self, input_model_file, input_data_files, template_files, common_trunk_keywords, pass_through_keywords,
+                 output_directory):
+
         self._input_data_files = input_data_files
         marker_coordinates = MarkerCoordinates(input_model_file, output_directory)
-        # organ_transformer = OrganTransformer(input_data_files, marker_coordinates.output_filename(), output_directory)
-        # self._output_filename = organ_transformer.output_filename()
+
+        # Convert keywords into regex patterns
+        if pass_through_keywords:
+            pass_through_patterns = [re.compile(keyword.strip(), re.IGNORECASE) for keyword in
+                                     pass_through_keywords.split(',')]
+        if common_trunk_keywords:
+            common_trunk_patterns = [re.compile(keyword.strip(), re.IGNORECASE) for keyword in
+                                     common_trunk_keywords.split(',')]
 
         # self.write_annotations(output_directory)
-
         self._output_filenames = []
         for file in input_data_files:
-            if 'colon' in file.lower():
+            filename = os.path.splitext(os.path.basename(file))[0]
+
+            if pass_through_keywords and any(p.search(filename) for p in pass_through_patterns):
+                print("Passing organ ({}) through".format(filename))
                 self._output_filenames.append(file)
                 self.add_organ_group(file)
+
+            elif common_trunk_keywords and any(p.search(filename) for p in common_trunk_patterns):
+                for pattern in common_trunk_patterns:
+                    if re.search(pattern, filename):
+                        if re.search(r'[r]\d{3}', filename, re.IGNORECASE):
+                            logger.warning('organ_inserter: SSV from CASE will not be inserted at this stage.')
+                            return
+                        for template_file in template_files:
+                            template_filename = os.path.splitext(os.path.basename(template_file))[0]
+                            if re.search(pattern, template_filename):
+                                print("Inserting organ ({}) via common trunk mode".format(filename))
+                                trunk_group_name = "left vagus nerve" if "left" in filename else "right vagus nerve"
+                                common_trunk_inserter = \
+                                    CommonTrunkInserter(file, template_file, output_directory, trunk_group_name)
+                                self._output_filenames.append(common_trunk_inserter.output_filename())
+                                self.add_organ_group(common_trunk_inserter.output_filename())
             else:
                 organ_transformer = OrganTransformer(file, marker_coordinates.output_filename(), output_directory)
                 self._output_filenames.append(organ_transformer.output_filename())

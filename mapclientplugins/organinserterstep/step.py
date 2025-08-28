@@ -27,13 +27,18 @@ class OrganInserterStep(WorkflowStepMountPoint):
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#provides',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
+        self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#uses-list-of',
+                      'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
         # Port data:
-        self._port0_inputZincModelFile = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
-        self._port1_inputZincDataFile = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+        self._port0_inputHostFile = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+        self._port1_inputOrgansToEmbedFile = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
         self._port2_output_marker_data_file = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+        self._port3_inputTemplatesFile = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
         # Config:
-        self._config = {'identifier': ''}
-
+        self._config = {'identifier': '',
+                        'common trunk keywords': '[MFr]\d{3}-left, [MFr]\d{3}-right',
+                        'pass through keywords': 'tract, diaphragm, bone, muscle, arteries, veins'}
         self._organ_inserter = None
 
     def execute(self):
@@ -44,8 +49,9 @@ class OrganInserterStep(WorkflowStepMountPoint):
         """
         # Put your execute step code here before calling the '_doneExecution' method.
 
-        self._organ_inserter = OrganInserter(self._port0_inputZincModelFile, self._port1_inputZincDataFile,
-                                             self._location)
+        self._organ_inserter = OrganInserter(self._port0_inputHostFile, self._port1_inputOrgansToEmbedFile,
+                                             self._port3_inputTemplatesFile, self.get_common_trunk_keywords(),
+                                             self.get_pass_through_keywords(), self._location)
         self._port2_output_marker_data_file = self._organ_inserter.get_output_file_name()
 
         self._doneExecution()
@@ -60,16 +66,17 @@ class OrganInserterStep(WorkflowStepMountPoint):
         :param dataIn: The data to set for the port at the given index.
         """
         if index == 0:
-            self._port0_inputZincModelFile = dataIn  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+            self._port0_inputHostFile = dataIn  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
         elif index == 1:
-            self._port1_inputZincDataFile = dataIn  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+            self._port1_inputOrgansToEmbedFile = dataIn  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+        elif index == 3:
+            self._port3_inputTemplatesFile = dataIn  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
 
     def getPortData(self, index):
         """
         Add your code here that will return the appropriate objects for this step.
         The index is the index of the port in the port list.  If there is only one
         provides port for this step then the index can be ignored.
-
         :param index: Index of the port to return.
         """
         files = []
@@ -109,6 +116,12 @@ class OrganInserterStep(WorkflowStepMountPoint):
         The framework will set the identifier for this step when it is loaded.
         """
         self._config['identifier'] = identifier
+
+    def get_common_trunk_keywords(self):
+        return self._config['common trunk keywords']
+
+    def get_pass_through_keywords(self):
+        return self._config['pass through keywords']
 
     def serialize(self):
         """
