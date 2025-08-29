@@ -1,7 +1,7 @@
 """
 OrganInserter class for analysing organ filenames and determining which mode to use for inserting organ into 3D whole
 body. It is possible to insert using 3 modes:
-(1) common trunk mode: Uses the trunk from a template file to determine the path of the organ trunk and branches.
+(1) common trunk mode: Adopts the trunk from a template file to determine the path of the organ trunk and branches.
     Currently used for vagus nerves scaffold. Potential use for airway, circulatory system or other nerves.
 (2) pass-through mode: In this mode, the organ scaffold has already been built in the 3D whole body geometric
     coordinates and will not require addition work for insertion in the whole body. Currently used for GI tract organs.
