@@ -17,11 +17,16 @@ class CommonTrunkInserter(BaseOutputFile):
         context = Context("InsertCommonTrunk")
         region = context.getDefaultRegion()
         region.readFile(organ_file)
-        tmp_region = region.createRegion()
-        tmp_region.readFile(template_file)
+        fieldmodule = region.getFieldmodule()
+        coordinates_field = fieldmodule.findFieldByName("coordinates").castFiniteElement()
+        template_region = region.createRegion()
+        template_region.readFile(template_file)
+        template_fieldmodule = template_region.getFieldmodule()
         unit_conversion_factor = None
-        adopt_template_trunk_coordinates(region, "coordinates", tmp_region, "coordinates", trunk_group_name,
-                                         unit_conversion_factor)
+
+        template_coordinates_field = template_fieldmodule.findFieldByName("coordinates").castFiniteElement()
+        adopt_template_trunk_coordinates(region, coordinates_field, template_region, template_coordinates_field,
+                                         trunk_group_name, unit_conversion_factor)
         filename = os.path.splitext(os.path.basename(organ_file))[0]
         filenameNew = filename + '_transformed.exf'
         self._output_filename = os.path.join(output_directory, filenameNew)
