@@ -21,14 +21,42 @@
      </property>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="label0">
+       <widget class="QLabel" name="labelIdentifier">
         <property name="text">
          <string>identifier:  </string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QLineEdit" name="lineEdit0"/>
+       <widget class="QLineEdit" name="lineEditIdentifier"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelCommontrunk">
+        <property name="text">
+         <string>common trunk keywords:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="lineEditCommontrunk">
+        <property name="toolTip">
+         <string>A comma separated list of keywords that identify organs to be inserted via the common trunk mode. Note that these organ scaffolds will require corresponding templates.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelPassthrough">
+        <property name="text">
+         <string>pass through keywords:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="lineEditPassthrough">
+        <property name="toolTip">
+         <string>A comma separated list of keywords which identify scaffolds that are built in the same coordinate system as the whole body and do not require further processing.</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -36,10 +64,10 @@
    <item row="1" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
      </property>
     </widget>
    </item>

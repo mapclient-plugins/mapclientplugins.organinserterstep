@@ -22,6 +22,8 @@ class ConfigureDialog(QtWidgets.QDialog):
         # and know how many occurrences of the current identifier there should
         # be.
         self._previousIdentifier = ''
+        self._previousCommonTrunk = ''
+        self._previousPassThrough = ''
         # Set a place holder for a callable that will get set from the step.
         # We will use this method to decide whether the identifier is unique.
         self.identifierOccursCount = None
@@ -29,7 +31,9 @@ class ConfigureDialog(QtWidgets.QDialog):
         self._makeConnections()
 
     def _makeConnections(self):
-        self._ui.lineEdit0.textChanged.connect(self.validate)
+        self._ui.lineEditIdentifier.textChanged.connect(self.validate)
+        self._ui.lineEditCommontrunk.textChanged.connect(self.validate)
+        self._ui.lineEditPassthrough.textChanged.connect(self.validate)
 
     def accept(self):
         """
@@ -53,13 +57,12 @@ class ConfigureDialog(QtWidgets.QDialog):
         """
         # Determine if the current identifier is unique throughout the workflow
         # The identifierOccursCount method is part of the interface to the workflow framework.
-        value = self.identifierOccursCount(self._ui.lineEdit0.text())
-        valid = (value == 0) or (value == 1 and self._previousIdentifier == self._ui.lineEdit0.text())
+        value = self.identifierOccursCount(self._ui.lineEditIdentifier.text())
+        valid = (value == 0) or (value == 1 and self._previousIdentifier == self._ui.lineEditIdentifier.text())
         if valid:
-            self._ui.lineEdit0.setStyleSheet(DEFAULT_STYLE_SHEET)
+            self._ui.lineEditIdentifier.setStyleSheet(DEFAULT_STYLE_SHEET)
         else:
-            self._ui.lineEdit0.setStyleSheet(INVALID_STYLE_SHEET)
-
+            self._ui.lineEditIdentifier.setStyleSheet(INVALID_STYLE_SHEET)
         return valid
 
     def getConfig(self):
@@ -68,9 +71,13 @@ class ConfigureDialog(QtWidgets.QDialog):
         set the _previousIdentifier value so that we can check uniqueness of the
         identifier over the whole of the workflow.
         '''
-        self._previousIdentifier = self._ui.lineEdit0.text()
+        self._previousIdentifier = self._ui.lineEditIdentifier.text()
+        self._previousCommonTrunk = self._ui.lineEditCommontrunk.text()
+        self._previousPassThrough = self._ui.lineEditPassthrough.text()
         config = {}
-        config['identifier'] = self._ui.lineEdit0.text()
+        config['identifier'] = self._ui.lineEditIdentifier.text()
+        config['common trunk keywords'] = self._ui.lineEditCommontrunk.text()
+        config['pass through keywords'] = self._ui.lineEditPassthrough.text()
         return config
 
     def setConfig(self, config):
@@ -80,5 +87,8 @@ class ConfigureDialog(QtWidgets.QDialog):
         identifier over the whole of the workflow.
         '''
         self._previousIdentifier = config['identifier']
-        self._ui.lineEdit0.setText(config['identifier'])
-
+        self._ui.lineEditIdentifier.setText(config['identifier'])
+        self._previousCommonTrunk = config['common trunk keywords']
+        self._ui.lineEditCommontrunk.setText(config['common trunk keywords'])
+        self._previousPassThrough = config['pass through keywords']
+        self._ui.lineEditPassthrough.setText(config['pass through keywords'])

@@ -20,7 +20,13 @@ def readfile(filename, split=False):
 readme = readfile("README.rst", split=True)[3:]  # skip title
 # For requirements not hosted on PyPi place listings
 # into the 'requirements.txt' file.
-requires = []  # minimal requirements listing
+requires = [
+    "ssvtools",
+    "cmlibs.zinc >= 4.2.1",
+    "PySide6",
+    "cmlibs.utils >= 0.13.0",
+    "scaffoldfitter >= 0.11.2"
+]  # minimal requirements listing
 source_license = readfile("LICENSE")
 
 
