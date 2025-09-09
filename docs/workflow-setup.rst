@@ -12,7 +12,7 @@ Next, configure the **Multiple File Chooser** to specify the `Zinc` EX files for
 
 If any of the organ scaffolds are to be inserted via the common trunk mode, you will also have to add another **Multiple File Chooser** step and configure it to pass the `Zinc` EX files for template organ scaffolds. Connect the output port for this second **Multiple File Chooser** step to the third input port of the **Organ Inserter** step.
 
-What you connect the **Organ Inserter** step output port depends on your objective. In :numref:`fig-organ-inserter-workflow`, we have connected the output port to a **Muxer** step - allowing us to supply the output files from **Organ Inserter** step and the whole body scaffold to **Argon Viewer** for visualisation purposes.
+What you connect the **Organ Inserter** step output port to depends on your objective. In :numref:`fig-organ-inserter-workflow`, we have connected the output port to a **Muxer** step - allowing us to supply the output files from **Organ Inserter** step and the whole body scaffold to **Argon Viewer** for visualisation purposes.
 
 .. _fig-organ-inserter-workflow:
 .. figure:: _images/organ-inserter-workflow.png

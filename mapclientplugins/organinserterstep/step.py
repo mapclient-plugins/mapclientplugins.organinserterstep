@@ -37,7 +37,7 @@ class OrganInserterStep(WorkflowStepMountPoint):
         self._port3_inputTemplatesFile = None  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
         # Config:
         self._config = {'identifier': '',
-                        'common trunk keywords': '[MFr]\d{3}-left, [MFr]\d{3}-right',
+                        'common trunk keywords': '[fmr]\d{3}-left, [fmr]\d{3}-right',
                         'pass through keywords': 'tract, diaphragm, bone, muscle, arteries, veins'}
         self._organ_inserter = None
 
