@@ -10,6 +10,10 @@ import json
 import os
 
 
+class InvalidInputError(Exception):
+    pass
+
+
 class OrganInserterStep(WorkflowStepMountPoint):
     def __init__(self, location):
         super(OrganInserterStep, self).__init__('Organ Inserter', location)
@@ -18,9 +22,12 @@ class OrganInserterStep(WorkflowStepMountPoint):
         # Add any other initialisation code here:
         self._icon = QtGui.QImage(':/organinserterstep/images/registration.png')
         # Ports:
-        self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
-                      'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
-                      'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
+        self.addPort([('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
+                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses',
+                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'),
+                      ('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
+                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses-list-of',
+                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location')])
         self.addPort(('http://physiomeproject.org/workflow/1.0/rdf-schema#port',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#uses-list-of',
                       'http://physiomeproject.org/workflow/1.0/rdf-schema#file_location'))
@@ -66,7 +73,12 @@ class OrganInserterStep(WorkflowStepMountPoint):
         :param dataIn: The data to set for the port at the given index.
         """
         if index == 0:
-            self._port0_inputHostFile = dataIn  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+            if isinstance(dataIn, list) and len(dataIn) > 0:
+                self._port0_inputHostFile = dataIn[0]
+            elif not isinstance(dataIn, list):
+                self._port0_inputHostFile = dataIn  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
+            else:
+                raise InvalidInputError
         elif index == 1:
             self._port1_inputOrgansToEmbedFile = dataIn  # http://physiomeproject.org/workflow/1.0/rdf-schema#file_location
         elif index == 3:
